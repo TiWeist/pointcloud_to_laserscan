@@ -68,14 +68,16 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
   max_height_ = this->declare_parameter("max_height", std::numeric_limits<double>::max());
   angle_min_ = this->declare_parameter("angle_min", -M_PI);
   angle_max_ = this->declare_parameter("angle_max", M_PI);
-  angle_increment_ = this->declare_parameter("angle_increment", M_PI / 180.0);
+  angle_increment_ = this->declare_parameter("angle_increment", M_PI / (180.0*4));
   scan_time_ = this->declare_parameter("scan_time", 1.0 / 30.0);
   range_min_ = this->declare_parameter("range_min", 0.0);
   range_max_ = this->declare_parameter("range_max", std::numeric_limits<double>::max());
   inf_epsilon_ = this->declare_parameter("inf_epsilon", 1.0);
   use_inf_ = this->declare_parameter("use_inf", true);
 
-  pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS());
+  pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS().reliable());
+  //pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS()); //default
+
 
   using std::placeholders::_1;
   // if pointcloud target frame specified, we need to filter by transform availability
@@ -120,7 +122,8 @@ void PointCloudToLaserScanNode::subscriptionListenerThreadLoop()
           "Got a subscriber to laserscan, starting pointcloud subscriber");
         rclcpp::SensorDataQoS qos;
         qos.keep_last(input_queue_size_);
-        sub_.subscribe(this, "cloud_in", qos.get_rmw_qos_profile());
+        //sub_.subscribe(this, "cloud_in", qos.get_rmw_qos_profile()); 
+        sub_.subscribe(this, "/lio_sam_ros2/deskew/cloud_deskewed", qos.get_rmw_qos_profile()); //rslidar_points
       }
     } else if (sub_.getSubscriber()) {
       RCLCPP_INFO(
